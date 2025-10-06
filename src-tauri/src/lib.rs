@@ -1,4 +1,8 @@
+use crate::player::AudioControler;
+
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+mod player;
+
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {name}! You've been greeted from Rust!")
@@ -8,6 +12,7 @@ fn greet(name: &str) -> String {
 pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![greet])
+        .manage(AudioControler::new())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
