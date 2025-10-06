@@ -24,3 +24,6 @@ serde_json = "1"
 ts-rs = "11.0.1"
 cpal = "0.16.0"
 assert_no_alloc = "1.1.2"
+thiserror = "2.0.17"
+symphonia = { version = "0.5.4", features = ["mp3"] }
+ogg-opus = "0.1.2"
