@@ -1,0 +1,14 @@
+cargo-features = ["profile-rustflags", "trim-paths"]
+
+[workspace]
+resolver = "3"
+members = ["src-tauri"]
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+opt-level = "z"
+panic = "abort"
+strip = true
+trim-paths = "all"
+rustflags = ["-Cdebuginfo=0", "-Zthreads=8"]
