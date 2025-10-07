@@ -1,4 +1,10 @@
-use std::{path::Path, process::Command};
+use std::{
+    path::Path,
+    process::Command,
+    sync::{atomic::AtomicUsize, Arc},
+};
+
+use crate::player::SharedAudioBuffer;
 
 mod opus;
 mod sym;
@@ -27,6 +33,16 @@ pub enum DecodingError {
 pub struct DecoderResult {
     pub samples: Vec<f32>,
     pub sample_rate: u32,
+}
+
+impl From<DecoderResult> for SharedAudioBuffer {
+    fn from(value: DecoderResult) -> Self {
+        Self {
+            _sample_rate: value.sample_rate,
+            pos: Arc::new(AtomicUsize::new(0)),
+            samples: Arc::new(value.samples),
+        }
+    }
 }
 
 pub(super) type DecodingResult = std::result::Result<DecoderResult, DecodingError>;

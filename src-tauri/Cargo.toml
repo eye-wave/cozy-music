@@ -27,3 +27,6 @@ assert_no_alloc = "1.1.2"
 thiserror = "2.0.17"
 symphonia = { version = "0.5.4", features = ["mp3"] }
 ogg-opus = "0.1.2"
+crossbeam-channel = "0.5.15"
+macro_pub = "0.1.0"
+arc-swap = "1.7.1"

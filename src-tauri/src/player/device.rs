@@ -1,71 +1,19 @@
-use assert_no_alloc::*;
+use arc_swap::ArcSwap;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-use super::AudioControler;
+use crate::player::audio_loop::build_stream_match;
+use crate::player::bus::Bus;
+use crate::player::SharedAudioBuffer;
 
-#[cfg(debug_assertions)]
-use assert_no_alloc::AllocDisabler;
+use super::AudioController;
 
 pub const SAMPLE_RATE: u32 = 44_100;
 
-#[cfg(debug_assertions)]
-#[global_allocator]
-static A: AllocDisabler = AllocDisabler;
-
-#[derive(Debug, Clone)]
-struct SharedData {
-    samples: Arc<Vec<f32>>,
-    _sample_rate: u32,
-    pos: Arc<AtomicUsize>,
-}
-
-fn audio_loop<S>(data: &mut [S], shared: &SharedData)
-where
-    S: cpal::Sample + cpal::FromSample<f32>,
-{
-    assert_no_alloc(|| {
-        let pos = shared.pos.load(Ordering::Relaxed);
-        let buf = &shared.samples;
-        let len = buf.len();
-
-        for (i, out_sample) in data.iter_mut().enumerate() {
-            let idx = pos + i;
-            let sample = if idx < len { buf[idx] } else { 0.0 };
-
-            *out_sample = S::from_sample(sample);
-        }
-
-        if pos > shared.samples.len() {
-            shared.pos.swap(0, Ordering::Relaxed);
-        } else {
-            shared.pos.store(pos + data.len(), Ordering::Relaxed);
-        }
-    });
-}
-
-macro_rules! build_stream_match {
-    ($device:expr, $shared:expr, $config:expr, $state:expr, $err_fn:expr, { $( $fmt:path => $ty:ty ),* $(,)? }) => {{
-        let shared_clone = Arc::clone($shared);
-        match $device.default_output_config().unwrap().sample_format() {
-            $(
-                $fmt => $device.build_output_stream(
-                    $config,
-                    move |data: &mut [$ty], _| audio_loop(data, &shared_clone),
-                    $err_fn,
-                    None,
-                ),
-            )*
-            other => panic!("Unsupported sample format {:?}", other),
-        }
-    }};
-}
-
-impl AudioControler {
-    pub fn new(samples: Vec<f32>, sample_rate: u32) -> Self {
+impl AudioController {
+    pub fn new() -> Self {
         let host = cpal::default_host();
         let device = host.default_output_device().expect("No output device");
         let mut supported_configs = device
@@ -74,20 +22,18 @@ impl AudioControler {
 
         let config = pick_config(&mut supported_configs);
         if config.is_none() {
-            return Self {};
+            return Self::default();
         }
 
-        println!("{config:#?}");
+        let shared_audio = Arc::new(ArcSwap::from_pointee(SharedAudioBuffer::default()));
+        let bus = Arc::new(Bus::default());
 
-        let shared_data = Arc::new(SharedData {
-            samples: Arc::from(samples),
-            _sample_rate: sample_rate,
-            pos: Arc::new(AtomicUsize::new(0)),
-        });
+        let shared_audio_ref = Arc::clone(&shared_audio);
 
         let stream = build_stream_match!(
             device,
-            &shared_data,
+            &shared_audio_ref,
+            &bus,
             &config.unwrap().into(),
             state_for_thread,
             |err| eprintln!("{err}"),
@@ -114,7 +60,7 @@ impl AudioControler {
             }
         });
 
-        Self {}
+        Self { bus, shared_audio }
     }
 }
 fn pick_config(configs: &mut cpal::SupportedOutputConfigs) -> Option<cpal::SupportedStreamConfig> {
