@@ -1,26 +1,27 @@
 {
-	"name": "src-client",
-	"private": true,
-	"version": "0.0.1",
-	"type": "module",
+	"name": "cozy-music",
+	"version": "1.0.0",
 	"scripts": {
-		"dev": "vite dev",
-		"build": "vite build",
-		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"dev": "./run-dev.sh",
+		"build": "bun run build.ts",
+		"build:client": "bun build --target browser src/routes/*.ts --splitting --outdir dist",
+		"build:tailwind": "bunx @tailwindcss/cli -i src/style.css -o dist/style.css -m",
+    "build:watch": "bun build --target browser src/routes/*.ts --splitting --outdir dist --watch"
+	},
+	"dependencies": {
+		"vanjs-core": "^1.6.0"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-static": "^3.0.9",
-		"@sveltejs/kit": "^2.43.2",
-		"@sveltejs/vite-plugin-svelte": "^6.2.0",
-		"@tailwindcss/vite": "^4.1.13",
-		"@tauri-apps/api": "^2.8.0",
-		"svelte": "^5.39.5",
-		"svelte-check": "^4.3.2",
-		"tailwindcss": "^4.1.13",
-		"typescript": "^5.9.2",
-		"vite": "^7.1.7"
+		"bun-types": "^1.2.23",
+		"cheerio": "^1.1.2",
+		"mini-van-plate": "^0.6.3",
+		"svgo": "^4.0.0",
+		"tailwindcss": "^4.1.14",
+		"terser": "^5.44.0",
+		"@types/bun": "latest"
+	},
+	"private": true,
+	"peerDependencies": {
+		"typescript": "^5"
 	}
 }
