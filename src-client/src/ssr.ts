@@ -16,6 +16,7 @@ export async function serverResponse(req: Request): Promise<Response> {
 	else if (url.pathname.match(/\.\S+$/))
 		return new Response(Bun.file(__dirname + url.pathname));
 
+	// biome-ignore lint: lazy
 	let Page: any;
 	const routePath = url.pathname === "/" ? "/index" : url.pathname;
 	try {

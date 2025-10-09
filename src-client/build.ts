@@ -1,8 +1,8 @@
 import { serverResponse } from "./src/ssr";
 import * as Bun from "bun";
 import { load } from "cheerio";
-import { readdirSync, statSync } from "fs";
-import { join, extname, basename } from "path";
+import { readdirSync, statSync } from "node:fs";
+import { join, extname, basename } from "node:path";
 import { optimize, type Config } from "svgo";
 import { minify, type MinifyOptions } from "terser";
 

@@ -10,7 +10,8 @@
 		"dev:client": "cd src-client && bun run dev",
 		"build:client": "cd src-client && bun run build",
 		"build": "bunx tauri build",
-		"format": "cargo fmt -v && bunx -b biome format . --write"
+		"format": "cargo fmt -v && bunx -b biome format . --write",
+		"lint": "cargo clippy && bunx -b biome lint ."
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.5",
