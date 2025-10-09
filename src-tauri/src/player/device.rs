@@ -1,10 +1,14 @@
 use arc_swap::ArcSwap;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use crossbeam_channel::bounded;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-use crate::player::audio_loop::build_stream_match;
+use super::error::*;
+
+use crate::player::audio_loop::{build_stream_match, AudioLoopProps};
 use crate::player::bus::Bus;
 use crate::player::SharedAudioBuffer;
 
@@ -13,30 +17,39 @@ use super::AudioController;
 pub const SAMPLE_RATE: u32 = 44_100;
 
 impl AudioController {
-    pub fn new() -> Self {
+    pub fn create() -> Result<Self, AudioError> {
         let host = cpal::default_host();
-        let device = host.default_output_device().expect("No output device");
+        let device = host
+            .default_output_device()
+            .ok_or(ConfigError::NoOutputDevice)?;
+
         let mut supported_configs = device
             .supported_output_configs()
-            .expect("Error getting configs");
+            .map_err(|_| ConfigError::ConfigQueryFailed)?;
 
-        let config = pick_config(&mut supported_configs);
-        if config.is_none() {
-            return Self::default();
-        }
+        let config = pick_config(&mut supported_configs)
+            .ok_or(ConfigError::NoConfigAvailable)?
+            .into();
 
         let shared_audio = Arc::new(ArcSwap::from_pointee(SharedAudioBuffer::default()));
         let bus = Arc::new(Bus::default());
+        let (tx, rx) = bounded(128);
+        let rx = Arc::new(rx);
+        let is_playing = Arc::new(AtomicBool::new(false));
 
-        let shared_audio_ref = Arc::clone(&shared_audio);
+        let props = AudioLoopProps {
+            _rx: Arc::clone(&rx),
+            bus: Arc::clone(&bus),
+            shared: Arc::clone(&shared_audio),
+            is_playing: Arc::clone(&is_playing),
+        };
 
         let stream = build_stream_match!(
             device,
-            &shared_audio_ref,
-            &bus,
-            &config.unwrap().into(),
+            props.clone(),
+            &config,
             state_for_thread,
-            |err| eprintln!("{err}"),
+            |err| eprintln!("Audio stream error: {err}"),
             {
                 cpal::SampleFormat::F32 => f32,
                 cpal::SampleFormat::I16 => i16,
@@ -48,19 +61,23 @@ impl AudioController {
                 cpal::SampleFormat::U8 => u8,
             }
         )
-        .expect("Failed to build output stream");
+        .map_err(|_| StreamError::StreamBuildFailed)?;
 
-        stream.play().unwrap();
+        stream.play().map_err(|_| StreamError::StreamPlayFailed)?;
 
-        thread::spawn(|| {
-            let _stream = stream;
-
+        thread::spawn(move || {
+            let _keep_alive = stream;
             loop {
                 thread::sleep(Duration::from_secs(60));
             }
         });
 
-        Self { bus, shared_audio }
+        Ok(AudioController {
+            _bus: bus,
+            event_sender: tx,
+            is_playing,
+            shared_audio,
+        })
     }
 }
 fn pick_config(configs: &mut cpal::SupportedOutputConfigs) -> Option<cpal::SupportedStreamConfig> {

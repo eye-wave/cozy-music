@@ -2,6 +2,7 @@ use crossbeam_channel::{bounded, Receiver, Sender};
 
 pub const BUFFER_SIZE: usize = 2048;
 
+#[allow(unused)]
 #[derive(Debug, Clone)]
 pub struct Bus {
     tx: Sender<f32>,
@@ -14,6 +15,7 @@ impl Default for Bus {
     }
 }
 
+#[allow(unused)]
 impl Bus {
     pub fn new(size: usize) -> Self {
         let (tx, rx) = bounded(size);

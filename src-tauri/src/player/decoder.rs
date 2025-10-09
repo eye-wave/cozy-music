@@ -9,7 +9,7 @@ use crate::player::SharedAudioBuffer;
 mod opus;
 mod sym;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, serde::Serialize)]
 pub enum DecodingError {
     #[error("")]
     NoTrack,
@@ -18,13 +18,25 @@ pub enum DecodingError {
     UnsupportedFormat(String),
 
     #[error("{0}")]
-    Io(#[from] std::io::Error),
+    Io(
+        #[from]
+        #[serde(skip)]
+        std::io::Error,
+    ),
 
     #[error("{0}")]
-    Opus(#[from] ogg_opus::Error),
+    Opus(
+        #[from]
+        #[serde(skip)]
+        ogg_opus::Error,
+    ),
 
     #[error("{0}")]
-    Symphonia(#[from] symphonia::core::errors::Error),
+    Symphonia(
+        #[from]
+        #[serde(skip)]
+        symphonia::core::errors::Error,
+    ),
 
     #[error("Failed to decode {0} file.")]
     Path(String),
