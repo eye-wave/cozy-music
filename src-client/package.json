@@ -6,19 +6,20 @@
 		"build": "bun run build.ts",
 		"build:client": "bun build --target browser src/routes/*.ts --splitting --outdir dist",
 		"build:tailwind": "bunx @tailwindcss/cli -i src/style.css -o dist/style.css -m",
-    "build:watch": "bun build --target browser src/routes/*.ts --splitting --outdir dist --watch"
+		"build:watch": "bun build --target browser src/routes/*.ts --splitting --outdir dist --watch"
 	},
 	"dependencies": {
 		"vanjs-core": "^1.6.0"
 	},
 	"devDependencies": {
+		"@tauri-apps/api": "^2.8.0",
+		"@types/bun": "latest",
 		"bun-types": "^1.2.23",
 		"cheerio": "^1.1.2",
 		"mini-van-plate": "^0.6.3",
 		"svgo": "^4.0.0",
 		"tailwindcss": "^4.1.14",
-		"terser": "^5.44.0",
-		"@types/bun": "latest"
+		"terser": "^5.44.0"
 	},
 	"private": true,
 	"peerDependencies": {

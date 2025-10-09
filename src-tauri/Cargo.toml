@@ -18,15 +18,15 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-ts-rs = "11.0.1"
-cpal = "0.16.0"
+arc-swap = "1.7.1"
 assert_no_alloc = "1.1.2"
-thiserror = "2.0.17"
-symphonia = { version = "0.5.4", features = ["mp3"] }
-ogg-opus = "0.1.2"
+cpal = "0.16.0"
 crossbeam-channel = "0.5.15"
 macro_pub = "0.1.0"
-arc-swap = "1.7.1"
+ogg-opus = "0.1.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+symphonia = { version = "0.5.4", features = ["mp3"] }
+tauri = { version = "2", features = [] }
+thiserror = "2.0.17"
+ts-rs = "11.0.1"
