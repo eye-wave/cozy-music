@@ -1,8 +1,4 @@
-use std::{
-    path::Path,
-    process::Command,
-    sync::{atomic::AtomicUsize, Arc},
-};
+use std::{path::Path, process::Command, sync::Arc};
 
 use crate::player::SharedAudioBuffer;
 
@@ -50,8 +46,7 @@ pub struct DecoderResult {
 impl From<DecoderResult> for SharedAudioBuffer {
     fn from(value: DecoderResult) -> Self {
         Self {
-            _sample_rate: value.sample_rate,
-            pos: Arc::new(AtomicUsize::new(0)),
+            sample_rate: value.sample_rate,
             samples: Arc::new(value.samples),
         }
     }

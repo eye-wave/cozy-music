@@ -1,16 +1,17 @@
 use arc_swap::ArcSwap;
+use atomic_float::AtomicF32;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crossbeam_channel::bounded;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use std::thread;
 use std::time::Duration;
 
 use super::error::*;
 
-use crate::player::audio_loop::{build_stream_match, AudioLoopProps};
-use crate::player::bus::Bus;
 use crate::player::SharedAudioBuffer;
+use crate::player::audio_loop::{AudioLoopState, build_stream_match};
+use crate::player::bus::Bus;
 
 use super::AudioController;
 
@@ -27,7 +28,7 @@ impl AudioController {
             .supported_output_configs()
             .map_err(|_| ConfigError::ConfigQueryFailed)?;
 
-        let config = pick_config(&mut supported_configs)
+        let config: cpal::StreamConfig = pick_config(&mut supported_configs)
             .ok_or(ConfigError::NoConfigAvailable)?
             .into();
 
@@ -36,12 +37,20 @@ impl AudioController {
         let (tx, rx) = bounded(128);
         let rx = Arc::new(rx);
         let is_playing = Arc::new(AtomicBool::new(false));
+        let position = Arc::new(AtomicF32::new(1.0));
+        let volume = Arc::new(AtomicF32::new(1.0));
+        let playback_speed = Arc::new(AtomicF32::new(1.0));
 
-        let props = AudioLoopProps {
+        let sample_rate: u32 = config.sample_rate.0;
+
+        let props = AudioLoopState {
             _rx: Arc::clone(&rx),
             bus: Arc::clone(&bus),
             shared: Arc::clone(&shared_audio),
             is_playing: Arc::clone(&is_playing),
+            position: Arc::clone(&position),
+            volume: Arc::clone(&volume),
+            playback_speed: Arc::clone(&playback_speed),
         };
 
         let stream = build_stream_match!(
@@ -74,9 +83,13 @@ impl AudioController {
 
         Ok(AudioController {
             _bus: bus,
+            sample_rate,
             event_sender: tx,
             is_playing,
             shared_audio,
+            position,
+            volume,
+            playback_speed,
         })
     }
 }

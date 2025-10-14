@@ -3,7 +3,7 @@ name = "cozy-music"
 version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -20,6 +20,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 arc-swap = "1.7.1"
 assert_no_alloc = "1.1.2"
+atomic_float = "1.1.0"
 cpal = "0.16.0"
 crossbeam-channel = "0.5.15"
 macro_pub = "0.1.0"

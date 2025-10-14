@@ -1,19 +1,24 @@
 use super::AudioError;
 
+#[allow(unused)]
 #[derive(Debug, Clone)]
 pub enum AudioEvent {
-    Playback(PlaybackEvent),
+    Playback(AtomicEvent),
+
+    Placeholder,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum PlaybackEvent {
+pub enum AtomicEvent {
     Play,
     Pause,
     Stop,
+    SetVolume(f32),
+    SetSpeed(f32),
 }
 
-impl From<PlaybackEvent> for AudioEvent {
-    fn from(value: PlaybackEvent) -> Self {
+impl From<AtomicEvent> for AudioEvent {
+    fn from(value: AtomicEvent) -> Self {
         Self::Playback(value)
     }
 }
