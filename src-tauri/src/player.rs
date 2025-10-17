@@ -1,5 +1,5 @@
 use arc_swap::ArcSwap;
-use atomic_float::AtomicF32;
+use atomic_float::{AtomicF32, AtomicF64};
 use crossbeam_channel::Sender;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -23,15 +23,31 @@ use device::SAMPLE_RATE;
 use event::AudioEvent;
 
 #[derive(Debug)]
+pub struct PlayerProps {
+    is_playing: Arc<AtomicBool>,
+    position: Arc<AtomicF64>,
+    volume: Arc<AtomicF32>,
+    playback_speed: Arc<AtomicF32>,
+}
+
+impl Default for PlayerProps {
+    fn default() -> Self {
+        Self {
+            is_playing: Arc::new(AtomicBool::new(false)),
+            position: Arc::new(AtomicF64::new(0.0)),
+            volume: Arc::new(AtomicF32::new(0.4)),
+            playback_speed: Arc::new(AtomicF32::new(0.97)),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct AudioController {
     _bus: Arc<Bus>,
     shared_audio: Arc<ArcSwap<SharedAudioBuffer>>,
     event_sender: Sender<AudioEvent>,
     sample_rate: u32,
-    is_playing: Arc<AtomicBool>,
-    position: Arc<AtomicF32>,
-    volume: Arc<AtomicF32>,
-    playback_speed: Arc<AtomicF32>,
+    props: Arc<PlayerProps>,
 }
 
 #[derive(Debug, Clone)]
@@ -64,19 +80,21 @@ impl AudioController {
 
     pub fn on_atomic_event(&self, event: AtomicEvent) {
         match event {
-            AtomicEvent::Play => self.is_playing.store(true, Ordering::Relaxed),
-            AtomicEvent::Pause => self.is_playing.store(false, Ordering::Relaxed),
+            AtomicEvent::Play => self.props.is_playing.store(true, Ordering::Relaxed),
+            AtomicEvent::Pause => self.props.is_playing.store(false, Ordering::Relaxed),
             AtomicEvent::Stop => {
-                self.is_playing.store(false, Ordering::Relaxed);
-                self.position.store(0.0, Ordering::Relaxed);
+                self.props.is_playing.store(false, Ordering::Relaxed);
+                self.props.position.store(0.0, Ordering::Relaxed);
             }
-            AtomicEvent::SetVolume(volume) => self.volume.store(volume, Ordering::Relaxed),
-            AtomicEvent::SetSpeed(speed) => self.playback_speed.store(speed, Ordering::Relaxed),
+            AtomicEvent::SetVolume(volume) => self.props.volume.store(volume, Ordering::Relaxed),
+            AtomicEvent::SetSpeed(speed) => {
+                self.props.playback_speed.store(speed, Ordering::Relaxed)
+            }
         };
     }
 
-    pub fn get_position(&self) -> f32 {
-        self.position.load(Ordering::Relaxed)
+    pub fn get_position(&self) -> f64 {
+        self.props.position.load(Ordering::Relaxed)
     }
 
     pub fn get_sample_rate(&self) -> u32 {

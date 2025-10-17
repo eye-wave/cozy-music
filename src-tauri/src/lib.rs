@@ -20,6 +20,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             crate::player::ipc::player_stop,
             crate::player::ipc::player_set_volume,
             crate::player::ipc::player_set_playback_speed,
+            crate::player::ipc::player_get_props,
         ])
         .manage(AudioController::create()?)
         .run(tauri::generate_context!())?;
