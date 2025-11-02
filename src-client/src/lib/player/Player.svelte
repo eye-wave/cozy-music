@@ -51,22 +51,26 @@
 	}
 
 	async function onPlay() {
-		if (!isPlaying) {
-			if (!isSongLoaded) {
-				const path = "/home/eyewave/Music/Peter's Observatory.mp3";
+		try {
+			if (!isPlaying) {
+				if (!isSongLoaded) {
+					const path = '/home/eyewave/Music/cumzo-discum.mp3';
 
-				duration = await invoke('load_song', { path });
-				isSongLoaded = true;
+					duration = await invoke('load_song', { path });
+					isSongLoaded = true;
+				}
+
+				await invoke('player_play');
+
+				isPlaying = true;
+				return;
 			}
 
-			await invoke('player_play');
-
-			isPlaying = true;
-			return;
+			await invoke('player_pause');
+			isPlaying = false;
+		} catch (err) {
+			console.error(err);
 		}
-
-		await invoke('player_pause');
-		isPlaying = false;
 	}
 </script>
 

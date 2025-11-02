@@ -16,35 +16,43 @@ where
     S: cpal::Sample + cpal::FromSample<f32>,
 {
     let bus = state.bus;
-    let shared = state.shared;
+    let shared = state.shared.load();
     let volume = state.props.volume.load(Ordering::Relaxed);
-
-    // TODO: move to alloc free sample loading
-    let shared = shared.load();
 
     let speed = state.props.playback_speed.load(Ordering::Relaxed);
     let ratio = (shared.sample_rate as f64 / sample_rate as f64) * speed as f64;
 
     assert_no_alloc(|| {
         let mut pos = state.props.position.load(Ordering::Relaxed);
-        let len = shared.samples.len() as f64;
 
         if !state.props.is_playing.load(Ordering::Relaxed) {
-            data.fill(cpal::Sample::EQUILIBRIUM);
+            data.fill(S::EQUILIBRIUM);
             return;
         }
 
-        for out_sample in data.iter_mut() {
-            let mut sample = interpolate(&shared.samples, pos);
+        let channels = shared.channels.len();
+        if channels == 0 {
+            data.fill(S::EQUILIBRIUM);
+            return;
+        }
 
-            sample *= volume;
+        let len = shared.channels[0].len() as f64;
 
-            bus.send(sample);
-            *out_sample = S::from_sample(sample);
+        for frame in data.chunks_mut(channels) {
+            for (ch, out_sample) in frame.iter_mut().enumerate() {
+                let chan_data = &shared.channels[ch];
+                let sample = interpolate(chan_data, pos) * volume;
+
+                *out_sample = S::from_sample(sample);
+
+                if ch == 0 {
+                    bus.send(sample);
+                }
+            }
 
             pos += ratio;
             if pos >= len {
-                pos %= len;
+                pos = 0.0;
             }
         }
 

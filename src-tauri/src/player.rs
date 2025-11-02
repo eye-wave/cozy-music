@@ -53,14 +53,14 @@ pub struct AudioController {
 #[derive(Debug, Clone)]
 struct SharedAudioBuffer {
     sample_rate: u32,
-    samples: Arc<Vec<f32>>,
+    channels: Arc<Vec<Vec<f32>>>,
 }
 
 impl Default for SharedAudioBuffer {
     fn default() -> Self {
         Self {
             sample_rate: SAMPLE_RATE,
-            samples: Arc::new(Vec::new()),
+            channels: Arc::new(Vec::new()),
         }
     }
 }

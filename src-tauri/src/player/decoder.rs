@@ -39,7 +39,7 @@ pub enum DecodingError {
 }
 
 pub struct DecoderResult {
-    pub samples: Vec<f32>,
+    pub channels: Vec<Vec<f32>>,
     pub sample_rate: u32,
 }
 
@@ -47,7 +47,7 @@ impl From<DecoderResult> for SharedAudioBuffer {
     fn from(value: DecoderResult) -> Self {
         Self {
             sample_rate: value.sample_rate,
-            samples: Arc::new(value.samples),
+            channels: Arc::new(value.channels),
         }
     }
 }
@@ -74,7 +74,9 @@ pub fn decode_samples<P: AsRef<Path>>(path: &P) -> DecodingResult {
     match mime.as_ref() {
         "audio/x-opus+ogg" => opus::decode_audio(&path),
         "audio/aac" | "audio/flac" | "audio/mp2" | "audio/mp4" | "audio/mpeg" | "audio/x-aiff"
-        | "audio/x-caf" | "audio/x-vorbis+ogg" | "audio/x-wav" => sym::decode_audio(&path),
+        | "audio/x-caf" | "audio/x-vorbis+ogg" | "audio/x-wav" | "audio/vnd.wave" => {
+            sym::decode_audio(&path)
+        }
         mime => Err(DecodingError::UnsupportedFormat(mime.to_string())),
     }
 }

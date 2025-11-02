@@ -12,7 +12,7 @@ use super::{AudioController, AudioError, SharedAudioBuffer, decode_samples};
 #[tauri::command]
 pub fn load_song(player: State<AudioController>, path: PathBuf) -> Result<usize, AudioError> {
     let buf: SharedAudioBuffer = decode_samples(&path)?.into();
-    let duration = buf.samples.len();
+    let duration = buf.channels.len();
 
     player.shared_audio.swap(Arc::new(buf));
 
