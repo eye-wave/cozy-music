@@ -82,6 +82,7 @@ impl AudioController {
         })
     }
 }
+
 fn pick_config(configs: &mut cpal::SupportedOutputConfigs) -> Option<cpal::SupportedStreamConfig> {
     // Prefer stereo f32 in 44.1k
     if let Some(config) = configs

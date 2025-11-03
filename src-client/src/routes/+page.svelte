@@ -1,5 +1,5 @@
 <script>
-	import { Player } from '$lib/player';
+	import { Player } from "$lib/player";
 </script>
 
 <Player />

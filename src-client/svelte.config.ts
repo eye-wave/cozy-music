@@ -1,6 +1,6 @@
-import adapter from '@sveltejs/adapter-static';
-import type { Config } from '@sveltejs/kit';
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import adapter from "@sveltejs/adapter-static";
+import type { Config } from "@sveltejs/kit";
+import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 
 const config: Config = {
 	// Consult https://svelte.dev/docs/kit/integrations
@@ -9,9 +9,9 @@ const config: Config = {
 	kit: {
 		adapter: adapter(),
 		alias: {
-			'~types': '../src-tauri/bindings/'
-		}
-	}
+			"~types": "../src-tauri/bindings/",
+		},
+	},
 };
 
 export default config;

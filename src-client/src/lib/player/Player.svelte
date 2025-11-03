@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { displayCurrentTime } from './display';
-	import { invoke } from '@tauri-apps/api/core';
-	import { onMount } from 'svelte';
-	import type { PlayerProps } from '~types/PlayerProps';
+	import { displayCurrentTime } from "./display";
+	import { invoke } from "@tauri-apps/api/core";
+	import { onMount } from "svelte";
+	import type { PlayerProps } from "~types/PlayerProps";
 
 	let isPlaying = $state(false);
 	let duration = $state(0);
@@ -15,11 +15,11 @@
 	});
 
 	function initValues() {
-		invoke('get_samplerate').then((sr) => {
+		invoke("get_samplerate").then(sr => {
 			sampleRate = sr as number;
 		});
 
-		invoke('player_get_props').then((p) => {
+		invoke("player_get_props").then(p => {
 			const props = p as PlayerProps;
 
 			volume = props.volume;
@@ -29,7 +29,7 @@
 
 	const updatePosition = () =>
 		isPlaying &&
-		invoke('get_position').then((p) => {
+		invoke("get_position").then(p => {
 			position = p as number;
 		});
 
@@ -41,32 +41,32 @@
 	function onChangeVolume(e: Event & { currentTarget: HTMLInputElement }) {
 		volume = Number(e.currentTarget.value);
 
-		invoke('player_set_volume', { volume });
+		invoke("player_set_volume", { volume });
 	}
 
 	function onChangeSpeed(e: Event & { currentTarget: HTMLInputElement }) {
 		speed = Number(e.currentTarget.value);
 
-		invoke('player_set_playback_speed', { speed });
+		invoke("player_set_playback_speed", { speed });
 	}
 
 	async function onPlay() {
 		try {
 			if (!isPlaying) {
 				if (!isSongLoaded) {
-					const path = '/home/eyewave/Music/cumzo-discum.mp3';
+					const path = "/home/eyewave/Music/cumzo-discum.mp3";
 
-					duration = await invoke('load_song', { path });
+					duration = await invoke("load_song", { path });
 					isSongLoaded = true;
 				}
 
-				await invoke('player_play');
+				await invoke("player_play");
 
 				isPlaying = true;
 				return;
 			}
 
-			await invoke('player_pause');
+			await invoke("player_pause");
 			isPlaying = false;
 		} catch (err) {
 			console.error(err);

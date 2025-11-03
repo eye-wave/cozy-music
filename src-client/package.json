@@ -24,9 +24,5 @@
 	},
 	"overrides": {
 		"vite": "npm:rolldown-vite@7.1.14"
-	},
-	"dependencies": {
-		"@tauri-apps/api": "^2.8.0",
-		"@tauri-apps/plugin-websocket": "^2.4.0"
 	}
 }
