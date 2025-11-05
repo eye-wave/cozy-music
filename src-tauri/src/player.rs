@@ -56,6 +56,12 @@ struct SharedAudioBuffer {
     channels: Arc<Vec<Vec<f32>>>,
 }
 
+impl SharedAudioBuffer {
+    pub fn duration(&self) -> usize {
+        self.channels.first().map(|s| s.len()).unwrap_or(0)
+    }
+}
+
 impl Default for SharedAudioBuffer {
     fn default() -> Self {
         Self {

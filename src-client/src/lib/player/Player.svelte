@@ -1,92 +1,42 @@
 <script lang="ts">
-	import { displayCurrentTime } from "./display";
-	import { invoke } from "@tauri-apps/api/core";
 	import { onMount } from "svelte";
-	import type { PlayerProps } from "~types/PlayerProps";
+	import { PlayerController } from "./player.svelte";
 
-	let isPlaying = $state(false);
-	let duration = $state(0);
-	let position = $state(0);
-	let sampleRate = $state(44100);
+	const player = new PlayerController();
 
-	onMount(() => {
-		initValues();
-		setInterval(updatePosition, 500);
-	});
+	import FavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
+	import Favorite from "~icons/material-symbols/favorite-rounded";
+	import PauseIcon from "~icons/material-symbols/pause-rounded";
+	import PlayArrowIcon from "~icons/material-symbols/play-arrow-rounded";
+	import SkipNextIcon from "~icons/material-symbols/skip-next-rounded";
 
-	function initValues() {
-		invoke("get_samplerate").then(sr => {
-			sampleRate = sr as number;
-		});
-
-		invoke("player_get_props").then(p => {
-			const props = p as PlayerProps;
-
-			volume = props.volume;
-			speed = props.playbackSpeed;
-		});
-	}
-
-	const updatePosition = () =>
-		isPlaying &&
-		invoke("get_position").then(p => {
-			position = p as number;
-		});
-
-	let isSongLoaded = $state(false);
-
-	let volume = $state(0);
-	let speed = $state(0);
-
-	function onChangeVolume(e: Event & { currentTarget: HTMLInputElement }) {
-		volume = Number(e.currentTarget.value);
-
-		invoke("player_set_volume", { volume });
-	}
-
-	function onChangeSpeed(e: Event & { currentTarget: HTMLInputElement }) {
-		speed = Number(e.currentTarget.value);
-
-		invoke("player_set_playback_speed", { speed });
-	}
+	onMount(() => player.init());
 
 	async function onPlay() {
-		try {
-			if (!isPlaying) {
-				if (!isSongLoaded) {
-					const path = "/home/eyewave/Music/cumzo-discum.mp3";
-
-					duration = await invoke("load_song", { path });
-					isSongLoaded = true;
-				}
-
-				await invoke("player_play");
-
-				isPlaying = true;
-				return;
-			}
-
-			await invoke("player_pause");
-			isPlaying = false;
-		} catch (err) {
-			console.error(err);
+		if (player.duration === 0) {
+			await player.loadSong("/home/eyewave/Music/cumzo-discum.mp3");
 		}
+
+		if (player.isPlaying) player.pause();
+		else player.play();
 	}
+
+	function parseNumberFromEvent(cb: (value: number) => unknown) {
+		return (e: Event & { currentTarget: HTMLInputElement }) => {
+			const value = Number(e.currentTarget.value);
+			if (Number.isNaN(value)) return;
+
+			cb(value);
+		};
+	}
+
+	const onChangeVolume = parseNumberFromEvent(v => {
+		player.volume = v;
+	});
+
+	const onChangeSpeed = parseNumberFromEvent(v => {
+		player.playbackSpeed = v;
+	});
 </script>
 
-<div class="bg-stone-700 m-2 h-52">
-	<button class="bg-white text-black px-4 rounded-full" onclick={onPlay}
-		>{isPlaying ? 'Stop' : 'Play'}</button
-	>
-
-	<label
-		><p>{volume}</p>
-		<input type="range" min="0.0" max="1.0" oninput={onChangeVolume} step="0.01" />
-	</label>
-	<label
-		><p>{speed}</p>
-		<input type="range" min="0.1" max="1.5" value="1.0" oninput={onChangeSpeed} step="0.01" />
-	</label>
-
-	<p>{displayCurrentTime(duration, position, sampleRate)}</p>
-</div>
+<div class="w-full p-4 bg-cya"></div>

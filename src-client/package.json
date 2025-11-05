@@ -12,6 +12,7 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"devDependencies": {
+		"@iconify/json": "^2.2.403",
 		"@sveltejs/adapter-static": "^3.0.9",
 		"@sveltejs/kit": "^2.43.2",
 		"@sveltejs/vite-plugin-svelte": "^6.2.0",
@@ -20,9 +21,13 @@
 		"svelte-check": "^4.3.2",
 		"tailwindcss": "^4.1.13",
 		"typescript": "^5.9.2",
+		"unplugin-icons": "^22.5.0",
 		"vite": "npm:rolldown-vite@7.1.14"
 	},
 	"overrides": {
 		"vite": "npm:rolldown-vite@7.1.14"
+	},
+	"dependencies": {
+		"@tauri-apps/api": "^2.9.0"
 	}
 }

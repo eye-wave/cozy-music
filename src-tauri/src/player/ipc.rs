@@ -9,14 +9,34 @@ use crate::player::PlayerProps;
 use super::AtomicEvent;
 use super::{AudioController, AudioError, SharedAudioBuffer, decode_samples};
 
+#[derive(Serialize, TS)]
+#[ts(export, rename = "LoadSongResult")]
+pub struct LoadSongSerialize {
+    #[serde(rename = "sampleRate")]
+    sample_rate: u32,
+    duration: usize,
+}
+
+impl From<&SharedAudioBuffer> for LoadSongSerialize {
+    fn from(value: &SharedAudioBuffer) -> Self {
+        Self {
+            duration: value.duration(),
+            sample_rate: value.sample_rate,
+        }
+    }
+}
+
 #[tauri::command]
-pub fn load_song(player: State<AudioController>, path: PathBuf) -> Result<usize, AudioError> {
+pub fn load_song(
+    player: State<AudioController>,
+    path: PathBuf,
+) -> Result<LoadSongSerialize, AudioError> {
     let buf: SharedAudioBuffer = decode_samples(&path)?.into();
-    let duration = buf.channels.len();
+    let result = LoadSongSerialize::from(&buf);
 
     player.shared_audio.swap(Arc::new(buf));
 
-    Ok(duration)
+    Ok(result)
 }
 
 #[tauri::command]
@@ -69,8 +89,7 @@ impl From<&PlayerProps> for PlayerPropsSerialize {
 }
 
 #[derive(Serialize, TS)]
-#[ts(export)]
-#[ts(rename = "PlayerProps")]
+#[ts(export, rename = "PlayerProps")]
 pub struct PlayerPropsSerialize {
     #[serde(rename = "isPlaying")]
     pub is_playing: bool,

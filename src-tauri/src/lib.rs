@@ -1,17 +1,13 @@
 use crate::player::AudioController;
 
+mod library;
 mod player;
-
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {name}! You've been greeted from Rust!")
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            greet,
+            crate::library::ipc::load_library,
             crate::player::ipc::load_song,
             crate::player::ipc::get_samplerate,
             crate::player::ipc::get_position,
