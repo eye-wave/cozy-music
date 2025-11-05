@@ -1,7 +1,9 @@
+use cfg_if::cfg_if;
 use std::{path::Path, process::Command, sync::Arc};
 
 use crate::player::SharedAudioBuffer;
 
+#[cfg(feature = "opus")]
 mod opus;
 mod sym;
 
@@ -20,6 +22,7 @@ pub enum DecodingError {
         std::io::Error,
     ),
 
+    #[cfg(feature = "opus")]
     #[error("{0}")]
     Opus(
         #[from]
@@ -72,7 +75,14 @@ pub fn decode_samples<P: AsRef<Path>>(path: &P) -> DecodingResult {
     let mime = get_mime_type(&path)?;
 
     match mime.as_ref() {
-        "audio/x-opus+ogg" => opus::decode_audio(&path),
+        "audio/x-opus+ogg" => {
+            cfg_if! {
+                if #[cfg(feature="opus")] { opus::decode_audio(&path) }
+                else {
+                    Err(DecodingError::UnsupportedFormat(mime.to_string()))
+                }
+            }
+        }
         "audio/aac" | "audio/flac" | "audio/mp2" | "audio/mp4" | "audio/mpeg" | "audio/x-aiff"
         | "audio/x-caf" | "audio/x-vorbis+ogg" | "audio/x-wav" | "audio/vnd.wave" => {
             sym::decode_audio(&path)

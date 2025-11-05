@@ -464,6 +464,7 @@ dependencies = [
  "arc-swap",
  "assert_no_alloc",
  "atomic_float",
+ "cfg-if",
  "cpal",
  "crossbeam-channel",
  "macro_pub",
