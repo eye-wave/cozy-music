@@ -34,4 +34,5 @@ thiserror = "2.0.17"
 ts-rs = "11.0.1"
 
 [features]
+default = []
 opus = ["ogg-opus"]

@@ -1,14 +1,17 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import Button from "./Button.svelte";
 	import { PlayerController } from "./player.svelte";
 
 	const player = new PlayerController();
 
-	import FavoriteOutline from "~icons/material-symbols/favorite-outline-rounded";
-	import Favorite from "~icons/material-symbols/favorite-rounded";
+	import FavoriteOutlineIcon from "~icons/material-symbols/favorite-outline-rounded";
+	import FavoriteIcon from "~icons/material-symbols/favorite-rounded";
 	import PauseIcon from "~icons/material-symbols/pause-rounded";
-	import PlayArrowIcon from "~icons/material-symbols/play-arrow-rounded";
-	import SkipNextIcon from "~icons/material-symbols/skip-next-rounded";
+	import PlayIcon from "~icons/material-symbols/play-arrow-rounded";
+	import SkipIcon from "~icons/material-symbols/skip-next-rounded";
+
+	let isCurrentLoved = $state(false);
 
 	onMount(() => player.init());
 
@@ -39,4 +42,29 @@
 	});
 </script>
 
-<div class="w-full p-4 bg-cya"></div>
+<div class="w-full p-4 bg-cyan-500 flex items-center gap-2 justify-center">
+	<Button>
+		{#if isCurrentLoved}
+		<FavoriteIcon/>
+		{:else}
+		<FavoriteOutlineIcon/>
+		{/if}
+	</Button>
+	<Button>
+		<SkipIcon style="transform:scaleX(-1)"/>
+	</Button>
+	<Button onclick={onPlay}>
+		{#if player.isPlaying}
+		<PauseIcon/>
+		{:else}
+		<PlayIcon/>
+		{/if}
+	</Button>
+	<Button>
+		<SkipIcon/>
+	</Button>
+
+	<p class="select-none text-white font-semibold font-mono">
+		{player.timeCode}
+	</p>
+</div>

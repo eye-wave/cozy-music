@@ -23,7 +23,8 @@
 				"useSortedClasses": "on"
 			},
 			"style": {
-				"useTemplate": "off"
+				"useTemplate": "off",
+				"useConst": "off"
 			},
 			"correctness": {
 				"noUnusedVariables": "off",

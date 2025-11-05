@@ -1,12 +1,9 @@
 use serde::Serialize;
-use std::sync::atomic::Ordering;
 use std::{path::PathBuf, sync::Arc};
 use tauri::State;
 use ts_rs::TS;
 
-use crate::player::PlayerProps;
-
-use super::AtomicEvent;
+use super::{AtomicEvent, PlayerPropsSerialize};
 use super::{AudioController, AudioError, SharedAudioBuffer, decode_samples};
 
 #[derive(Serialize, TS)]
@@ -27,7 +24,7 @@ impl From<&SharedAudioBuffer> for LoadSongSerialize {
 }
 
 #[tauri::command]
-pub fn load_song(
+pub fn player_load_song(
     player: State<AudioController>,
     path: PathBuf,
 ) -> Result<LoadSongSerialize, AudioError> {
@@ -40,13 +37,13 @@ pub fn load_song(
 }
 
 #[tauri::command]
-pub fn get_samplerate(player: State<AudioController>) -> u32 {
-    player.get_sample_rate()
+pub fn player_get_position(player: State<AudioController>) -> f64 {
+    player.get_position()
 }
 
 #[tauri::command]
-pub fn get_position(player: State<AudioController>) -> f64 {
-    player.get_position()
+pub fn player_set_position(player: State<AudioController>, secs: usize) {
+    player.set_position(secs);
 }
 
 #[tauri::command]
@@ -77,29 +74,7 @@ pub fn player_set_playback_speed(
     player.send_event(AtomicEvent::SetSpeed(speed))
 }
 
-impl From<&PlayerProps> for PlayerPropsSerialize {
-    fn from(value: &PlayerProps) -> Self {
-        Self {
-            is_playing: value.is_playing.load(Ordering::Relaxed),
-            position: value.position.load(Ordering::Relaxed),
-            volume: value.volume.load(Ordering::Relaxed),
-            playback_speed: value.playback_speed.load(Ordering::Relaxed),
-        }
-    }
-}
-
-#[derive(Serialize, TS)]
-#[ts(export, rename = "PlayerProps")]
-pub struct PlayerPropsSerialize {
-    #[serde(rename = "isPlaying")]
-    pub is_playing: bool,
-    pub position: f64,
-    pub volume: f32,
-    #[serde(rename = "playbackSpeed")]
-    pub playback_speed: f32,
-}
-
 #[tauri::command]
 pub fn player_get_props(player: State<AudioController>) -> PlayerPropsSerialize {
-    player.props.as_ref().into()
+    player.serialize_props()
 }

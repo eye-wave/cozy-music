@@ -8,9 +8,9 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             crate::library::ipc::load_library,
-            crate::player::ipc::load_song,
-            crate::player::ipc::get_samplerate,
-            crate::player::ipc::get_position,
+            crate::player::ipc::player_load_song,
+            crate::player::ipc::player_get_position,
+            crate::player::ipc::player_set_position,
             crate::player::ipc::player_play,
             crate::player::ipc::player_pause,
             crate::player::ipc::player_stop,

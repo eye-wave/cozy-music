@@ -11,7 +11,7 @@ use crate::player::{AudioEvent, PlayerProps, SharedAudioBuffer};
 #[global_allocator]
 static A: AllocDisabler = AllocDisabler;
 
-pub fn audio_loop<S>(data: &mut [S], state: AudioLoopState, sample_rate: u32)
+pub fn audio_loop<S>(data: &mut [S], state: AudioLoopState)
 where
     S: cpal::Sample + cpal::FromSample<f32>,
 {
@@ -19,8 +19,7 @@ where
     let shared = state.shared.load();
     let volume = state.props.volume.load(Ordering::Relaxed);
 
-    let speed = state.props.playback_speed.load(Ordering::Relaxed);
-    let ratio = (shared.sample_rate as f64 / sample_rate as f64) * speed as f64;
+    let ratio = state.props.get_playback_rate(shared.sample_rate);
 
     assert_no_alloc(|| {
         let mut pos = state.props.position.load(Ordering::Relaxed);
@@ -56,7 +55,7 @@ where
             }
         }
 
-        state.props.position.store(pos, Ordering::Relaxed);
+        state.props.position.store(pos, Ordering::SeqCst);
     });
 }
 
@@ -73,13 +72,11 @@ macro_rules! build_stream_match {
     ($device:expr, $props: expr, $config:expr, $state:expr, $err_fn:expr, { $( $fmt:path => $ty:ty ),* $(,)? }) => {{
         use crate::player::audio_loop::audio_loop;
 
-        let sample_rate = $config.sample_rate;
-
         match $device.default_output_config().unwrap().sample_format() {
             $(
                 $fmt => $device.build_output_stream(
                     $config,
-                    move |data: &mut [$ty], _| audio_loop(data, $props, sample_rate.0),
+                    move |data: &mut [$ty], _| audio_loop(data, $props),
                     $err_fn,
                     None,
                 ),

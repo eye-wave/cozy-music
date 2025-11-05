@@ -14,16 +14,19 @@ export class PlayerController {
 
 	public async init(): Promise<void> {
 		try {
-			const [sampleRate, props] = await Promise.all([
-				invoke<number>("get_samplerate"),
-				invoke<PlayerProps>("player_get_props"),
-			]);
+			const props = await invoke<PlayerProps>("player_get_props");
 
-			this._sampleRate = sampleRate;
+			this._sampleRate = props.sampleRate;
 			this._isPlaying = props.isPlaying;
 			this._playbackSpeed = props.playbackSpeed;
 			this._position = props.position;
 			this._volume = props.volume;
+			this._duration = props.localDuration;
+			this._localSampleRate = props.localSampleRate;
+
+			if (props.isPlaying) {
+				this.startPositionTimer();
+			}
 		} catch (_) {}
 	}
 
@@ -51,15 +54,16 @@ export class PlayerController {
 		return this._position;
 	}
 
-	public set position(_position: number) {
-		// TODO: implement
-		// this.invokeCommand("player_set_position", { position: _position });
+	public set position(seconds: number) {
+		this.invokeCommand("player_set_position", { secs: seconds }).then(() => {
+			this._position = seconds * this.playbackRate * this.sampleRate;
+		});
 	}
 
 	public async loadSong(path: string): Promise<void> {
 		try {
-			const props = await invoke<LoadSongResult>("load_song", { path });
-			this._duration = props.duration / props.sampleRate;
+			const props = await invoke<LoadSongResult>("player_load_song", { path });
+			this._duration = props.duration;
 			this._localSampleRate = props.sampleRate;
 		} catch (_) {}
 	}
@@ -117,8 +121,8 @@ export class PlayerController {
 
 	private async updatePosition(): Promise<void> {
 		try {
-			const position = await invoke<number>("get_position");
-			this._position = position / this._localSampleRate;
+			const position = await invoke<number>("player_get_position");
+			this._position = position;
 		} catch (_) {}
 
 		this.startPositionTimer();
@@ -134,6 +138,10 @@ export class PlayerController {
 		return `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 	}
 
+	private toSeconds(value: number) {
+		return value / (this.sampleRate * this.playbackRate);
+	}
+
 	public duration = $derived(this._duration);
 	public isPlaying = $derived(this._isPlaying);
 	public sampleRate = $derived(this._sampleRate);
@@ -141,6 +149,6 @@ export class PlayerController {
 		(this._localSampleRate / this._sampleRate) * this._playbackSpeed,
 	);
 	public timeCode = $derived(
-		`${this.formatTime(this._position)} / ${this.formatTime(this._duration)}`,
+		`${this.formatTime(this.toSeconds(this._position))} / ${this.formatTime(this.toSeconds(this._duration))}`,
 	);
 }

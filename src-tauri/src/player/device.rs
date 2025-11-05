@@ -34,9 +34,12 @@ impl AudioController {
         let bus = Arc::new(Bus::default());
         let (tx, rx) = bounded(128);
         let rx = Arc::new(rx);
-        let props = Arc::new(PlayerProps::default());
 
         let sample_rate: u32 = config.sample_rate.0;
+        let props = Arc::new(PlayerProps {
+            sample_rate,
+            ..Default::default()
+        });
 
         let state = AudioLoopState {
             _rx: Arc::clone(&rx),
