@@ -54,9 +54,10 @@ export class PlayerController {
 		return this._position;
 	}
 
-	public set position(seconds: number) {
-		this.invokeCommand("player_set_position", { secs: seconds }).then(() => {
-			this._position = seconds * this.playbackRate * this.sampleRate;
+	public set position(position: number) {
+		this.invokeCommand("player_set_positionqqq", { pos: position }).then(() => {
+      console.log("penis",position)
+			this._position = position;
 		});
 	}
 

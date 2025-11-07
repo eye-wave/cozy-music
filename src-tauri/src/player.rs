@@ -117,9 +117,11 @@ impl AudioController {
             .get_playback_rate(self.shared_audio.load().sample_rate)
     }
 
-    pub fn set_position(&self, seconds: usize) {
+    pub fn set_position(&self, pos: usize) {
         let rate = self.get_playback_rate();
-        let position = seconds as f64 * rate * self.sample_rate as f64;
+        let position = rate * pos as f64;
+
+        println!("{position}");
 
         self.props.position.store(position, Ordering::SeqCst);
     }

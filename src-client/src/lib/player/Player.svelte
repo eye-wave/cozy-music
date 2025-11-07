@@ -13,6 +13,15 @@
 
 	let isCurrentLoved = $state(false);
 
+	let isDragging = $state(false);
+	let visiblePosition = $state(player.position);
+
+	$effect(() => {
+		if (isDragging) return;
+
+		visiblePosition = player.position;
+	});
+
 	onMount(() => player.init());
 
 	async function onPlay() {
@@ -24,14 +33,29 @@
 		else player.play();
 	}
 
-	function parseNumberFromEvent(cb: (value: number) => unknown) {
+	function parseNumberFromEvent(
+		cb: (value: number) => unknown,
+		fallback?: () => void,
+	) {
 		return (e: Event & { currentTarget: HTMLInputElement }) => {
+			fallback?.();
+
 			const value = Number(e.currentTarget.value);
 			if (Number.isNaN(value)) return;
 
 			cb(value);
 		};
 	}
+
+	const onSeek = parseNumberFromEvent(
+		pos => {
+			const seconds = pos / player.playbackRate / player.sampleRate;
+			player.position = seconds;
+		},
+		() => {
+			isDragging = false;
+		},
+	);
 
 	const onChangeVolume = parseNumberFromEvent(v => {
 		player.volume = v;
@@ -42,29 +66,43 @@
 	});
 </script>
 
-<div class="w-full p-4 bg-cyan-500 flex items-center gap-2 justify-center">
-	<Button>
-		{#if isCurrentLoved}
-		<FavoriteIcon/>
-		{:else}
-		<FavoriteOutlineIcon/>
-		{/if}
-	</Button>
-	<Button>
-		<SkipIcon style="transform:scaleX(-1)"/>
-	</Button>
-	<Button onclick={onPlay}>
-		{#if player.isPlaying}
-		<PauseIcon/>
-		{:else}
-		<PlayIcon/>
-		{/if}
-	</Button>
-	<Button>
-		<SkipIcon/>
-	</Button>
+<div class="w-full p-4 bg-cyan-500 ">
+	<div class="flex items-center gap-2 justify-center">
+		<Button>
+			{#if isCurrentLoved}
+			<FavoriteIcon/>
+			{:else}
+			<FavoriteOutlineIcon/>
+			{/if}
+		</Button>
+		<Button>
+			<SkipIcon style="transform:scaleX(-1)"/>
+		</Button>
+		<Button onclick={onPlay}>
+			{#if player.isPlaying}
+			<PauseIcon/>
+			{:else}
+			<PlayIcon/>
+			{/if}
+		</Button>
+		<Button>
+			<SkipIcon/>
+		</Button>
 
-	<p class="select-none text-white font-semibold font-mono">
-		{player.timeCode}
-	</p>
+		<p class="select-none text-white font-semibold font-mono">
+			{player.timeCode}
+		</p>
+	</div>
+
+	<div>
+		<input
+			onmousedown={() => isDragging = true}
+			onmouseleave={() => isDragging = false}
+			onmouseup={onSeek}
+			class="w-full"
+			type="range"
+			value={visiblePosition}
+			max={player.duration}
+		>
+	</div>
 </div>

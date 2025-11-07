@@ -42,8 +42,9 @@ pub fn player_get_position(player: State<AudioController>) -> f64 {
 }
 
 #[tauri::command]
-pub fn player_set_position(player: State<AudioController>, secs: usize) {
-    player.set_position(secs);
+pub fn player_set_position(player: State<AudioController>, pos: usize) {
+    println!("ipc {pos}");
+    player.set_position(pos);
 }
 
 #[tauri::command]
