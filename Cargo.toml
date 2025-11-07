@@ -1,17 +1,29 @@
-cargo-features = ["profile-rustflags", "trim-paths"]
+[package]
+name = "cozy-music"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["you"]
+edition = "2024"
 
-[workspace]
-resolver = "3"
-members = ["src-tauri"]
+[build-dependencies]
+slint-build = "1.14.1"
 
-[profile.dev.package."*"]
-opt-level = 3
+[dependencies]
+arc-swap = "1.7.1"
+assert_no_alloc = "1.1.2"
+atomic_float = "1.1.0"
+cfg-if = "1.0.4"
+cpal = "0.16.0"
+crossbeam-channel = "0.5.15"
+macro_pub = "0.1.0"
+ogg-opus = { version = "0.1.2", optional = true }
+serde = { version = "1", features = ["derive"] }
+slint = "1.14.1"
+symphonia = { version = "0.5.4", features = ["mp3"] }
+thiserror = "2.0.17"
+ts-rs = "11.0.1"
 
-[profile.release]
-codegen-units = 1
-lto = "fat"
-opt-level = "z"
-panic = "abort"
-strip = true
-trim-paths = "all"
-rustflags = ["-Cdebuginfo=0", "-Zthreads=8"]
+[features]
+default = []
+opus = ["ogg-opus"]
+
