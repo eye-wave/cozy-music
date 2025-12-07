@@ -115,6 +115,18 @@ impl AudioController {
         self.props.position.load(Ordering::Relaxed)
     }
 
+    pub fn get_song_position_string(&self) -> String {
+        let buffer = self.shared_audio.load();
+
+        let duration = buffer.duration();
+        let pos = self.get_song_position();
+
+        let (dm, ds) = format_sample_time(duration as f64, buffer.sample_rate);
+        let (pm, ps) = format_sample_time(pos, self.sample_rate());
+
+        format!("{dm:02}:{ds:02}/{pm:02}:{ps:02}")
+    }
+
     pub fn get_is_playing(&self) -> bool {
         self.props.is_playing.load(Ordering::Relaxed)
     }
@@ -125,4 +137,12 @@ impl AudioController {
 
         self.props.position.store(position, Ordering::SeqCst);
     }
+}
+
+fn format_sample_time(samples: f64, sample_rate: u32) -> (usize, usize) {
+    let total_secs = samples / sample_rate as f64;
+    let min = (total_secs / 60.0).floor() as usize;
+    let s = total_secs - (min as f64 * 60.0);
+
+    (min, s as usize)
 }

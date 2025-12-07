@@ -1,80 +1,77 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use iced::widget::svg::Handle;
-use iced::widget::{Column, Row, Svg, TextInput, button, column, row, svg};
-use iced::{Center, Task};
+use iced::widget::{Column, Row, Svg, Text, button, column, row, svg};
+use iced::{Center, Subscription, Task, time};
 
+mod events;
+mod widgets;
+
+use crate::gui::events::{AppEvent, PlayerEvent, UiEvent};
 use crate::player::event::AtomicEvent;
 use crate::player::{self, AudioController, SharedAudioBuffer, decode_samples};
 
 pub fn run() -> Result<(), iced::Error> {
+    tracing_subscriber::fmt::init();
+
     iced::application("Cozy music", CozyApp::update, CozyApp::view)
+        .subscription(CozyApp::subscription)
         .window_size((1200.0, 640.0))
         .run()
 }
 
 pub struct CozyApp {
-    text_input: Arc<str>,
     player: Option<player::AudioController>,
 }
 
 impl Default for CozyApp {
     fn default() -> Self {
         Self {
-            text_input: Arc::from(""),
             player: AudioController::create().ok(),
         }
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum Message {
-    TextInput(Arc<str>),
-    Load,
-    Loaded(SharedAudioBuffer),
-    Error,
-    Play,
-    Pause,
-}
-
 impl CozyApp {
-    pub fn update(&mut self, message: Message) -> Task<Message> {
-        match (message, self.player.as_ref()) {
-            (Message::TextInput(text), _) => {
-                self.text_input = Arc::clone(&text);
-                Task::none()
-            }
-            (Message::Load, Some(_)) => {
-                let path = self.text_input.clone();
+    pub fn update(&mut self, event: AppEvent) -> Task<AppEvent> {
+        match event {
+            AppEvent::Player(event) => {
+                if let Some(player) = self.player.as_ref() {
+                    match event {
+                        PlayerEvent::Loaded(buf) => {
+                            player.shared_audio.swap(Arc::new(buf));
+                        }
+                        PlayerEvent::Play => {
+                            player.send_event(AtomicEvent::Play).ok();
+                        }
+                        PlayerEvent::Pause => {
+                            player.send_event(AtomicEvent::Pause).ok();
+                        }
+                        PlayerEvent::Error(err) => eprintln!("{err:?}"),
+                    }
+                }
 
-                Task::perform(
-                    async move {
-                        decode_samples(path.as_ref())
-                            .map(SharedAudioBuffer::from)
-                            .map_err(|e| e.to_string())
-                    },
-                    |res| match res {
-                        Ok(buf) => Message::Loaded(buf),
-                        Err(_) => Message::Error,
-                    },
-                )
-            }
-            (Message::Loaded(buf), Some(player)) => {
-                player.shared_audio.swap(Arc::new(buf));
-                println!("Ready!");
                 Task::none()
             }
-            (Message::Play, Some(player)) => {
-                player.send_event(AtomicEvent::Play).ok();
-                Task::none()
-            }
-            (Message::Pause, Some(player)) => {
-                player.send_event(AtomicEvent::Pause).ok();
-                Task::none()
-            }
+
+            AppEvent::Ui(UiEvent::LoadSong) => Task::perform(
+                async move {
+                    decode_samples("/home/eyewave/Music/my-ids/400_eyewave.mp3")
+                        .map(SharedAudioBuffer::from)
+                },
+                |res| match res {
+                    Ok(res) => PlayerEvent::Loaded(res).into(),
+                    Err(err) => PlayerEvent::Error(Arc::new(err.into())).into(),
+                },
+            ),
 
             _ => Task::none(),
         }
+    }
+
+    fn subscription(&self) -> Subscription<AppEvent> {
+        time::every(Duration::from_millis(100)).map(|_| UiEvent::SongTick.into())
     }
 
     fn logo() -> Svg<'static> {
@@ -83,24 +80,23 @@ impl CozyApp {
         svg(handle)
     }
 
-    pub fn view(&self) -> Column<'_, Message> {
-        let value = &self.text_input;
-        let player: Option<Row<'_, Message>> = self.player.as_ref().map(|player| {
+    pub fn view(&self) -> Column<'_, AppEvent> {
+        let player: Option<Row<'_, AppEvent>> = self.player.as_ref().map(|player| {
             let is_playing = player.get_is_playing();
+            let time = player.get_song_position_string();
 
             row![
-                button("Load").on_press(Message::Load),
+                Text::new(time),
+                button("Load").on_press(UiEvent::LoadSong.into()),
                 if is_playing {
-                    button("Pause").on_press(Message::Pause)
+                    button("Pause").on_press(PlayerEvent::Pause.into())
                 } else {
-                    button("Play").on_press(Message::Play)
+                    button("Play").on_press(PlayerEvent::Play.into())
                 }
             ]
         });
 
         column![
-            TextInput::new("enter path...", value)
-                .on_input(|msg| Message::TextInput(Arc::from(msg))),
             if let Some(player) = player {
                 player
             } else {

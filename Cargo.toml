@@ -14,10 +14,9 @@ argh = "0.1.13"
 assert_no_alloc = "1.1.2"
 atomic_float = "1.1.0"
 cfg-if = "1.0.4"
-chrono = "0.4.42"
 cpal = "0.16.0"
 crossbeam-channel = "0.5.15"
-iced = { version = "0.13.1", features = ["svg", "async-std"] }
+iced = { version = "0.13.1", features = ["svg", "async-std", "tokio"] }
 log = "0.4.28"
 macro_pub = "0.1.0"
 ogg-opus = { version = "0.1.2", optional = true }
