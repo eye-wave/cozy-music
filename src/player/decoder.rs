@@ -41,8 +41,9 @@ pub enum DecodingError {
     Path(String),
 }
 
+#[derive(Debug, Clone)]
 pub struct DecoderResult {
-    pub channels: Vec<Vec<f32>>,
+    pub channels: Arc<Vec<Vec<f32>>>,
     pub sample_rate: u32,
 }
 
@@ -50,14 +51,17 @@ impl From<DecoderResult> for SharedAudioBuffer {
     fn from(value: DecoderResult) -> Self {
         Self {
             sample_rate: value.sample_rate,
-            channels: Arc::new(value.channels),
+            channels: value.channels,
         }
     }
 }
 
-pub(super) type DecodingResult = std::result::Result<DecoderResult, DecodingError>;
+pub type DecodingResult = std::result::Result<DecoderResult, DecodingError>;
 
-fn get_mime_type<P: AsRef<Path>>(path: &P) -> Result<String, DecodingError> {
+fn get_mime_type<P>(path: &P) -> Result<String, DecodingError>
+where
+    P: AsRef<Path> + ?Sized,
+{
     let output = Command::new("xdg-mime")
         .args(["query", "filetype", &path.as_ref().to_string_lossy()])
         .output()?;
@@ -71,7 +75,10 @@ fn get_mime_type<P: AsRef<Path>>(path: &P) -> Result<String, DecodingError> {
     }
 }
 
-pub fn decode_samples<P: AsRef<Path>>(path: &P) -> DecodingResult {
+pub fn decode_samples<P>(path: &P) -> DecodingResult
+where
+    P: AsRef<Path> + ?Sized,
+{
     let mime = get_mime_type(&path)?;
 
     match mime.as_ref() {

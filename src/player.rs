@@ -4,26 +4,22 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use arc_swap::ArcSwap;
 use atomic_float::{AtomicF32, AtomicF64};
 use crossbeam_channel::Sender;
-use serde::Serialize;
-use ts_rs::TS;
 
 mod audio_loop;
 mod bus;
 mod decoder;
 mod device;
 mod error;
-mod event;
 mod resample;
 
-pub mod ipc;
+pub mod event;
 
-pub use decoder::{DecodingError, decode_samples};
+pub use decoder::*;
 pub use error::*;
-pub use event::*;
 
 use bus::Bus;
 use device::SAMPLE_RATE;
-use event::AudioEvent;
+use event::{AtomicEvent, AudioEvent};
 
 #[derive(Debug)]
 pub struct PlayerProps {
@@ -57,14 +53,13 @@ impl PlayerProps {
 #[derive(Debug)]
 pub struct AudioController {
     _bus: Arc<Bus>,
-    shared_audio: Arc<ArcSwap<SharedAudioBuffer>>,
+    pub shared_audio: Arc<ArcSwap<SharedAudioBuffer>>,
     event_sender: Sender<AudioEvent>,
-    sample_rate: u32,
     props: Arc<PlayerProps>,
 }
 
 #[derive(Debug, Clone)]
-struct SharedAudioBuffer {
+pub struct SharedAudioBuffer {
     sample_rate: u32,
     channels: Arc<Vec<Vec<f32>>>,
 }
@@ -112,52 +107,22 @@ impl AudioController {
         };
     }
 
-    pub fn get_playback_rate(&self) -> f64 {
-        self.props
-            .get_playback_rate(self.shared_audio.load().sample_rate)
+    pub fn sample_rate(&self) -> u32 {
+        self.props.sample_rate
     }
 
-    pub fn set_position(&self, pos: usize) {
-        let rate = self.get_playback_rate();
-        let position = rate * pos as f64;
-
-        println!("{position}");
-
-        self.props.position.store(position, Ordering::SeqCst);
-    }
-
-    pub fn get_position(&self) -> f64 {
+    pub fn get_song_position(&self) -> f64 {
         self.props.position.load(Ordering::Relaxed)
     }
 
-    pub fn serialize_props(&self) -> PlayerPropsSerialize {
-        PlayerPropsSerialize {
-            is_playing: self.props.is_playing.load(Ordering::Relaxed),
-            position: self.props.position.load(Ordering::Relaxed),
-            volume: self.props.volume.load(Ordering::Relaxed),
-            sample_rate: self.sample_rate,
-            playback_speed: self.props.playback_speed.load(Ordering::Relaxed),
-            local_duraion: self.shared_audio.load().duration(),
-            local_sample_rate: self.shared_audio.load().sample_rate,
-        }
+    pub fn get_is_playing(&self) -> bool {
+        self.props.is_playing.load(Ordering::Relaxed)
     }
-}
 
-#[derive(Serialize, TS)]
-#[ts(export, rename = "PlayerProps")]
-pub struct PlayerPropsSerialize {
-    #[serde(rename = "isPlaying")]
-    pub is_playing: bool,
-    pub position: f64,
-    pub volume: f32,
+    pub fn set_position(&self, pos: usize) {
+        let rate = self.sample_rate() as f64;
+        let position = rate * pos as f64;
 
-    #[serde(rename = "sampleRate")]
-    pub sample_rate: u32,
-    #[serde(rename = "playbackSpeed")]
-    pub playback_speed: f32,
-
-    #[serde(rename = "localDuration")]
-    pub local_duraion: usize,
-    #[serde(rename = "localSampleRate")]
-    pub local_sample_rate: u32,
+        self.props.position.store(position, Ordering::SeqCst);
+    }
 }

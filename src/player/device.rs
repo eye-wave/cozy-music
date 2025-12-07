@@ -78,7 +78,6 @@ impl AudioController {
 
         Ok(AudioController {
             _bus: bus,
-            sample_rate,
             event_sender: tx,
             shared_audio,
             props,

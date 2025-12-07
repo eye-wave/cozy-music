@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use super::{ChannelError, DecodingError};
+use super::{DecodingError, event::ChannelError};
 
 #[derive(Debug, thiserror::Error, Serialize)]
 pub enum AudioError {

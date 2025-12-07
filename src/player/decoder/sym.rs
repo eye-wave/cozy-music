@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::path::Path;
+use std::sync::Arc;
 use symphonia::core::audio::SampleBuffer;
 use symphonia::core::codecs::DecoderOptions;
 use symphonia::core::formats::FormatOptions;
@@ -66,6 +67,6 @@ pub fn decode_audio<P: AsRef<Path>>(path: &P) -> DecodingResult {
 
     Ok(DecoderResult {
         sample_rate,
-        channels: channels_data,
+        channels: Arc::new(channels_data),
     })
 }
