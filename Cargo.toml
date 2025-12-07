@@ -17,6 +17,7 @@ cfg-if = "1.0.4"
 cpal = "0.16.0"
 crossbeam-channel = "0.5.15"
 iced = { version = "0.13.1", features = ["svg", "async-std", "tokio"] }
+infer = "0.19.0"
 log = "0.4.28"
 macro_pub = "0.1.0"
 ogg-opus = { version = "0.1.2", optional = true }

@@ -86,28 +86,37 @@ impl AudioController {
 }
 
 fn pick_config(configs: &mut cpal::SupportedOutputConfigs) -> Option<cpal::SupportedStreamConfig> {
-    // Prefer stereo f32 in 44.1k
+    let configs: Vec<_> = configs.collect();
+    const PREFERRED_RATE: u32 = 44_100;
+
+    // 1. Stereo F32 at 44.1k
     if let Some(config) = configs
+        .iter()
         .filter(|c| c.channels() >= 2 && c.sample_format() == cpal::SampleFormat::F32)
-        .find(|c| c.min_sample_rate().0 <= SAMPLE_RATE && c.max_sample_rate().0 >= SAMPLE_RATE)
+        .find(|c| {
+            c.min_sample_rate().0 <= PREFERRED_RATE && c.max_sample_rate().0 >= PREFERRED_RATE
+        })
     {
-        return Some(config.with_sample_rate(cpal::SampleRate(SAMPLE_RATE)));
+        return Some(config.with_sample_rate(cpal::SampleRate(PREFERRED_RATE)));
     }
 
-    // any f32 in 44.1k
+    // 2. Stereo F32 at any rate
     if let Some(config) = configs
-        .filter(|c| c.sample_format() == cpal::SampleFormat::F32)
-        .find(|c| c.min_sample_rate().0 <= SAMPLE_RATE && c.max_sample_rate().0 >= SAMPLE_RATE)
+        .iter()
+        .filter(|c| c.channels() >= 2 && c.sample_format() == cpal::SampleFormat::F32)
+        .next()
     {
-        return Some(config.with_sample_rate(cpal::SampleRate(SAMPLE_RATE)));
+        return Some(config.with_sample_rate(cpal::SampleRate(config.max_sample_rate().0)));
     }
 
-    // any 44.1k
-    if let Some(config) = configs
-        .find(|c| c.min_sample_rate().0 <= SAMPLE_RATE && c.max_sample_rate().0 >= SAMPLE_RATE)
-    {
-        return Some(config.with_sample_rate(cpal::SampleRate(SAMPLE_RATE)));
+    // 3. Stereo any type at any rate
+    if let Some(config) = configs.iter().filter(|c| c.channels() >= 2).next() {
+        return Some(config.with_sample_rate(cpal::SampleRate(config.max_sample_rate().0)));
     }
 
-    None
+    // 4. Mono fallback
+    configs
+        .iter()
+        .next()
+        .map(|c| c.with_sample_rate(cpal::SampleRate(c.max_sample_rate().0)))
 }
