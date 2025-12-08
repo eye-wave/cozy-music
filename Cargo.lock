@@ -999,6 +999,7 @@ dependencies = [
  "argh",
  "assert_no_alloc",
  "atomic_float",
+ "bitflags 2.10.0",
  "cfg-if",
  "cpal",
  "crossbeam-channel",

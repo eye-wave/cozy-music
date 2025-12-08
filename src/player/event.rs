@@ -14,7 +14,7 @@ pub enum AtomicEvent {
     Pause,
     Stop,
     SetVolume(f32),
-    SetSpeed(f32),
+    SetSpeed(f64),
 }
 
 impl From<AtomicEvent> for AudioEvent {

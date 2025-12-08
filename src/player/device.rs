@@ -103,20 +103,18 @@ fn pick_config(configs: &mut cpal::SupportedOutputConfigs) -> Option<cpal::Suppo
     // 2. Stereo F32 at any rate
     if let Some(config) = configs
         .iter()
-        .filter(|c| c.channels() >= 2 && c.sample_format() == cpal::SampleFormat::F32)
-        .next()
+        .find(|c| c.channels() >= 2 && c.sample_format() == cpal::SampleFormat::F32)
     {
         return Some(config.with_sample_rate(cpal::SampleRate(config.max_sample_rate().0)));
     }
 
     // 3. Stereo any type at any rate
-    if let Some(config) = configs.iter().filter(|c| c.channels() >= 2).next() {
+    if let Some(config) = configs.iter().find(|c| c.channels() >= 2) {
         return Some(config.with_sample_rate(cpal::SampleRate(config.max_sample_rate().0)));
     }
 
     // 4. Mono fallback
     configs
-        .iter()
-        .next()
+        .first()
         .map(|c| c.with_sample_rate(cpal::SampleRate(c.max_sample_rate().0)))
 }

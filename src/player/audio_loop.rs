@@ -24,7 +24,10 @@ where
     assert_no_alloc(|| {
         let mut pos = state.props.position.load(Ordering::Relaxed);
 
-        if !state.props.is_playing.load(Ordering::Relaxed) {
+        if !state
+            .props
+            .get_flag(super::PlayerFlags::IS_PLAYING, Ordering::Relaxed)
+        {
             data.fill(S::EQUILIBRIUM);
             return;
         }
