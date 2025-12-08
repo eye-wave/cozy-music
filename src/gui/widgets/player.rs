@@ -6,6 +6,7 @@ use iced::widget::{Text, button, column, row, slider, vertical_slider};
 use iced::{Element, Subscription, Task, time};
 
 use crate::gui::events::AppEvent;
+use crate::gui::widgets::gen_svg_icon;
 use crate::player::event::AtomicEvent;
 use crate::player::{AudioController, AudioError, SharedAudioBuffer, decode_samples};
 
@@ -28,7 +29,9 @@ pub enum PlayerWidgetEvent {
     Error(Arc<AudioError>),
     Play,
     Pause,
+    Stop,
     Volume(f32),
+    Speed(f64),
     Seek(f64),
     SongTick,
 }
@@ -40,6 +43,10 @@ impl From<PlayerWidgetEvent> for AppEvent {
 }
 
 impl PlayerWidget {
+    const PLAY_ICON: &[u8] = include_bytes!("../../assets/icon-play.svg");
+    const PAUSE_ICON: &[u8] = include_bytes!("../../assets/icon-pause.svg");
+    const STOP_ICON: &[u8] = include_bytes!("../../assets/icon-stop.svg");
+
     pub fn update(
         &mut self,
         player: &AudioController,
@@ -71,8 +78,14 @@ impl PlayerWidget {
             PlayerWidgetEvent::Pause => {
                 player.send_event(AtomicEvent::Pause);
             }
+            PlayerWidgetEvent::Stop => {
+                player.send_event(AtomicEvent::Stop);
+            }
             PlayerWidgetEvent::Volume(vol) => {
                 player.send_event(AtomicEvent::SetVolume(vol));
+            }
+            PlayerWidgetEvent::Speed(s) => {
+                player.send_event(AtomicEvent::SetSpeed(s));
             }
             PlayerWidgetEvent::Seek(pos) => player.set_position(pos),
             PlayerWidgetEvent::SongTick => self.time = player.get_song_position_pretty(),
@@ -93,15 +106,26 @@ impl PlayerWidget {
     pub fn view(&self, player: &AudioController) -> Element<'_, PlayerWidgetEvent> {
         let time = player.get_song_position_percent() * 100.0;
         let volume = player.get_volume() * 100.0;
+        let speed = player.get_speed();
 
         column![
             row![
                 match player.get_is_playing() {
-                    true => button("Pause").on_press(PlayerWidgetEvent::Pause),
-                    false => button("Play").on_press(PlayerWidgetEvent::Play),
+                    true => button(gen_svg_icon(Self::PAUSE_ICON))
+                        .on_press(PlayerWidgetEvent::Pause)
+                        .width(40),
+                    false => button(gen_svg_icon(Self::PLAY_ICON))
+                        .on_press(PlayerWidgetEvent::Play)
+                        .width(40),
                 },
+                button(gen_svg_icon(Self::STOP_ICON))
+                    .on_press(PlayerWidgetEvent::Stop)
+                    .width(40),
                 Text::new(self.get_time()),
                 vertical_slider(0.0..=100.0, volume, |v| PlayerWidgetEvent::Volume(v * 0.01))
+                    .height(30),
+                vertical_slider(0.5..=2.0, speed, PlayerWidgetEvent::Speed)
+                    .step(0.01)
                     .height(30)
             ]
             .align_y(Center),

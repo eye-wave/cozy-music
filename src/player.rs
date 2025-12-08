@@ -127,7 +127,8 @@ impl AudioController {
             AtomicEvent::Stop => {
                 self.props
                     .clear_flag(PlayerFlags::IS_PLAYING, Ordering::SeqCst);
-                self.props.position.store(0.0, Ordering::Relaxed);
+
+                self.props.position.store(0.0, Ordering::SeqCst);
             }
             AtomicEvent::SetVolume(volume) => self.props.volume.store(volume, Ordering::Relaxed),
             AtomicEvent::SetSpeed(speed) => {
@@ -191,6 +192,10 @@ impl AudioController {
     pub fn get_is_playing(&self) -> bool {
         self.props
             .get_flag(PlayerFlags::IS_PLAYING, Ordering::Relaxed)
+    }
+
+    pub fn get_speed(&self) -> f64 {
+        self.props.playback_speed.load(Ordering::Relaxed)
     }
 
     pub fn set_position(&self, pos_percent: f64) {

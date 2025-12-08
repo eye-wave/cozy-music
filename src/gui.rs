@@ -1,11 +1,11 @@
-use iced::widget::svg::Handle;
-use iced::widget::{Column, Svg, Text, column, svg};
+use iced::widget::{Column, Text, column};
 use iced::{Center, Element, Subscription, Task};
 
 mod events;
 mod widgets;
 
 use crate::gui::events::AppEvent;
+use crate::gui::widgets::gen_svg_icon;
 use crate::gui::widgets::player::PlayerWidget;
 use crate::player::AudioController;
 
@@ -33,6 +33,8 @@ impl Default for CozyApp {
 }
 
 impl CozyApp {
+    const LOGO: &[u8] = include_bytes!("assets/logo.svg");
+
     pub fn update(&mut self, event: AppEvent) -> Task<AppEvent> {
         match event {
             AppEvent::Player(event) => {
@@ -52,12 +54,6 @@ impl CozyApp {
         PlayerWidget::subscription().map(AppEvent::Player)
     }
 
-    fn logo(&self) -> Svg<'static> {
-        let svg_data = include_bytes!("assets/logo.svg");
-        let handle = Handle::from_memory(svg_data);
-        svg(handle)
-    }
-
     pub fn view(&self) -> Column<'_, AppEvent> {
         let player_view: Element<_> = self
             .player
@@ -65,7 +61,7 @@ impl CozyApp {
             .map(|p| self.player_widget.view(p).map(AppEvent::Player))
             .unwrap_or_else(|| Text::new("").into());
 
-        column![player_view, self.logo()]
+        column![player_view, gen_svg_icon(Self::LOGO)]
             .padding(20)
             .align_x(Center)
     }
