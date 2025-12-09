@@ -86,8 +86,8 @@ pub struct AudioController {
 
 #[derive(Debug, Clone)]
 pub struct SharedAudioBuffer {
-    sample_rate: u32,
-    channels: Arc<Vec<Vec<f32>>>,
+    pub sample_rate: u32,
+    pub channels: Arc<Vec<Vec<f32>>>,
 }
 
 impl SharedAudioBuffer {
@@ -164,26 +164,6 @@ impl AudioController {
         pos_samples / duration_samples
     }
 
-    pub fn get_song_position_pretty(&self) -> [u8; 13] {
-        let buffer = self.shared_audio.load();
-
-        let duration = buffer.duration();
-        let pos = self.get_song_position();
-
-        let (dm, ds) = format_sample_time(duration as f64, buffer.sample_rate);
-        let (pm, ps) = format_sample_time(pos, self.sample_rate());
-
-        let mut buffer = *b"00:00 / 00:00";
-
-        buffer[0..2].copy_from_slice(&pad_start(dm));
-        buffer[3..5].copy_from_slice(&pad_start(ds));
-
-        buffer[8..10].copy_from_slice(&pad_start(pm));
-        buffer[11..13].copy_from_slice(&pad_start(ps));
-
-        buffer
-    }
-
     pub fn get_is_playing(&self) -> bool {
         self.props
             .get_flag(PlayerFlags::IS_PLAYING, Ordering::Relaxed)
@@ -200,16 +180,4 @@ impl AudioController {
 
         self.props.position.store(position, Ordering::SeqCst);
     }
-}
-
-fn format_sample_time(samples: f64, sample_rate: u32) -> (u8, u8) {
-    let total_secs = samples / sample_rate as f64;
-    let min = (total_secs / 60.0).floor() as u8;
-    let s = total_secs - (min as f64 * 60.0);
-
-    (min, s as u8)
-}
-
-fn pad_start(num: u8) -> [u8; 2] {
-    [((num / 10) % 10) + 48, (num % 10) + 48]
 }

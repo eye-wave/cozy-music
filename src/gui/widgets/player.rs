@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::{sync::Arc, time::Duration};
 
 use iced::Alignment::Center;
-use iced::widget::{Text, button, column, row, slider, vertical_slider};
+use iced::widget::{Text, button, column, row, slider};
 use iced::{Element, Subscription, Task, time};
 
 use crate::gui::events::AppEvent;
@@ -11,13 +11,15 @@ use crate::player::event::{AtomicEvent, AudioEvent};
 use crate::player::{AudioController, AudioError, SharedAudioBuffer, decode_samples};
 
 pub struct PlayerWidget {
-    time: [u8; 13],
+    song_dur: [u8; 5],
+    song_pos: [u8; 5],
 }
 
 impl Default for PlayerWidget {
     fn default() -> Self {
         Self {
-            time: *b"00:00 / 00:00",
+            song_dur: *b"00:00",
+            song_pos: *b"00:00",
         }
     }
 }
@@ -67,6 +69,7 @@ impl PlayerWidget {
             }
             PlayerWidgetEvent::Loaded(buf) => {
                 player.shared_audio.swap(Arc::new(buf));
+                self.song_dur = get_song_duration_pretty(player);
             }
             PlayerWidgetEvent::Play => {
                 player.send_event(AtomicEvent::Play);
@@ -88,7 +91,7 @@ impl PlayerWidget {
                 player.send_event(AtomicEvent::SetSpeed(s));
             }
             PlayerWidgetEvent::Seek(pos) => player.set_position(pos),
-            PlayerWidgetEvent::SongTick => self.time = player.get_song_position_pretty(),
+            PlayerWidgetEvent::SongTick => self.song_pos = get_song_position_pretty(player),
             PlayerWidgetEvent::Error(err) => eprintln!("{err:?}"),
         }
 
@@ -99,14 +102,19 @@ impl PlayerWidget {
         time::every(Duration::from_millis(100)).map(|_| PlayerWidgetEvent::SongTick)
     }
 
-    fn get_time(&self) -> Cow<'_, str> {
-        Cow::Borrowed(std::str::from_utf8(&self.time).unwrap())
+    fn get_time(&self) -> (Cow<'_, str>, Cow<'_, str>) {
+        (
+            Cow::Borrowed(std::str::from_utf8(&self.song_dur).unwrap()),
+            Cow::Borrowed(std::str::from_utf8(&self.song_pos).unwrap()),
+        )
     }
 
     pub fn view(&self, player: &AudioController) -> Element<'_, PlayerWidgetEvent> {
         let time = player.get_song_position_percent() * 100.0;
         let volume = player.get_volume() * 100.0;
         let speed = player.get_speed();
+
+        let (duration, position) = self.get_time();
 
         column![
             row![
@@ -121,19 +129,71 @@ impl PlayerWidget {
                 button(gen_svg_icon(Self::STOP_ICON))
                     .on_press(PlayerWidgetEvent::Stop)
                     .width(40),
-                Text::new(self.get_time()),
-                vertical_slider(0.0..=100.0, volume, |v| PlayerWidgetEvent::Volume(v * 0.01))
-                    .height(30),
-                vertical_slider(0.5..=2.0, speed, PlayerWidgetEvent::Speed)
-                    .step(0.01)
-                    .height(30)
+                column![
+                    row![
+                        slider(0.0..=100.0, volume, |v| PlayerWidgetEvent::Volume(v * 0.01))
+                            .step(1.0)
+                            .width(80),
+                        Text::new(format!("{volume:.0}%"))
+                    ],
+                    row![
+                        slider(0.5..=2.0, speed, PlayerWidgetEvent::Speed)
+                            .step(0.01)
+                            .width(80),
+                        Text::new(format!("x{speed:.2}"))
+                    ],
+                ]
             ]
-            .align_y(Center),
-            row![slider(0.0..=100.0, time, |v| PlayerWidgetEvent::Seek(
-                v * 0.01
-            ))]
+            .align_y(Center)
+            .spacing(12),
+            row![
+                Text::new(position),
+                slider(0.0..=100.0, time, |v| PlayerWidgetEvent::Seek(v * 0.01)),
+                Text::new(duration),
+            ]
+            .spacing(12)
+            .align_y(Center)
         ]
-        .max_width(320)
+        .align_x(Center)
+        .max_width(800)
         .into()
     }
+}
+
+fn get_song_position_pretty(player: &AudioController) -> [u8; 5] {
+    let pos = player.get_song_position();
+    let (pm, ps) = format_sample_time(pos, player.sample_rate());
+
+    let mut buffer = *b"00:00";
+
+    buffer[0..2].copy_from_slice(&pad_start(pm));
+    buffer[3..5].copy_from_slice(&pad_start(ps));
+
+    buffer
+}
+
+fn get_song_duration_pretty(player: &AudioController) -> [u8; 5] {
+    let buffer = player.shared_audio.load();
+    let duration = buffer.duration();
+
+    let (dm, ds) = format_sample_time(duration as f64, buffer.sample_rate);
+
+    let mut buffer = *b"00:00";
+
+    buffer[0..2].copy_from_slice(&pad_start(dm));
+    buffer[3..5].copy_from_slice(&pad_start(ds));
+
+    buffer
+}
+
+fn format_sample_time(samples: f64, sample_rate: u32) -> (u8, u8) {
+    let total_secs = samples / sample_rate as f64;
+    let min = (total_secs / 60.0).floor() as u8;
+    let s = total_secs - (min as f64 * 60.0);
+
+    (min, s as u8)
+}
+
+fn pad_start(num: u8) -> [u8; 2] {
+    [((num / 10) % 10) + 48, (num % 10) + 48]
 }
