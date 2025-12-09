@@ -21,16 +21,13 @@ where
 
     let ratio = state.props.get_playback_rate(shared.sample_rate);
 
-    if let Ok(msg) = state.rx.try_recv() {
-        match msg {
-            AudioEvent::Stop => {
-                state.props.position.store(0.0, Ordering::Relaxed);
-                state
-                    .props
-                    .clear_flag(PlayerFlags::IS_PLAYING, Ordering::Relaxed);
-            }
-            _ => {}
-        }
+    if let Ok(msg) = state.rx.try_recv()
+        && let AudioEvent::Stop = msg
+    {
+        state.props.position.store(0.0, Ordering::Relaxed);
+        state
+            .props
+            .clear_flag(PlayerFlags::IS_PLAYING, Ordering::Relaxed);
     }
 
     assert_no_alloc(|| {
