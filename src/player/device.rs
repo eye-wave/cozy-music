@@ -42,7 +42,7 @@ impl AudioController {
         });
 
         let state = AudioLoopState {
-            _rx: Arc::clone(&rx),
+            rx: Arc::clone(&rx),
             bus: Arc::clone(&bus),
             shared: Arc::clone(&shared_audio),
             props: Arc::clone(&props),

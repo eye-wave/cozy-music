@@ -5,7 +5,7 @@ use std::sync::{Arc, atomic::Ordering};
 
 use super::bus::Bus;
 use super::resample::interpolate;
-use crate::player::{AudioEvent, PlayerProps, SharedAudioBuffer};
+use crate::player::{AudioEvent, PlayerFlags, PlayerProps, SharedAudioBuffer};
 
 #[cfg(debug_assertions)]
 #[global_allocator]
@@ -20,6 +20,18 @@ where
     let volume = state.props.volume.load(Ordering::Relaxed);
 
     let ratio = state.props.get_playback_rate(shared.sample_rate);
+
+    if let Ok(msg) = state.rx.try_recv() {
+        match msg {
+            AudioEvent::Stop => {
+                state.props.position.store(0.0, Ordering::Relaxed);
+                state
+                    .props
+                    .clear_flag(PlayerFlags::IS_PLAYING, Ordering::Relaxed);
+            }
+            _ => {}
+        }
+    }
 
     assert_no_alloc(|| {
         let mut pos = state.props.position.load(Ordering::Relaxed);
@@ -64,7 +76,7 @@ where
 
 #[derive(Clone)]
 pub(super) struct AudioLoopState {
-    pub _rx: Arc<Receiver<AudioEvent>>,
+    pub rx: Arc<Receiver<AudioEvent>>,
     pub bus: Arc<Bus>,
     pub shared: Arc<ArcSwap<SharedAudioBuffer>>,
     pub props: Arc<PlayerProps>,

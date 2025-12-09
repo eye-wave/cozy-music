@@ -7,7 +7,7 @@ use iced::{Element, Subscription, Task, time};
 
 use crate::gui::events::AppEvent;
 use crate::gui::widgets::gen_svg_icon;
-use crate::player::event::AtomicEvent;
+use crate::player::event::{AtomicEvent, AudioEvent};
 use crate::player::{AudioController, AudioError, SharedAudioBuffer, decode_samples};
 
 pub struct PlayerWidget {
@@ -79,7 +79,7 @@ impl PlayerWidget {
                 player.send_event(AtomicEvent::Pause);
             }
             PlayerWidgetEvent::Stop => {
-                player.send_event(AtomicEvent::Stop);
+                player.send_event(AudioEvent::Stop);
             }
             PlayerWidgetEvent::Volume(vol) => {
                 player.send_event(AtomicEvent::SetVolume(vol));

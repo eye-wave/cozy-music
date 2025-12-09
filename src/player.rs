@@ -10,6 +10,7 @@ mod audio_loop;
 mod bus;
 mod decoder;
 mod device;
+mod effects;
 mod error;
 mod resample;
 
@@ -124,12 +125,6 @@ impl AudioController {
             AtomicEvent::Pause => self
                 .props
                 .clear_flag(PlayerFlags::IS_PLAYING, Ordering::SeqCst),
-            AtomicEvent::Stop => {
-                self.props
-                    .clear_flag(PlayerFlags::IS_PLAYING, Ordering::SeqCst);
-
-                self.props.position.store(0.0, Ordering::SeqCst);
-            }
             AtomicEvent::SetVolume(volume) => self.props.volume.store(volume, Ordering::Relaxed),
             AtomicEvent::SetSpeed(speed) => {
                 self.props.playback_speed.store(speed, Ordering::Relaxed)

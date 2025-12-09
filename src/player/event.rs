@@ -4,15 +4,13 @@ use super::AudioError;
 #[derive(Debug, Clone)]
 pub enum AudioEvent {
     Playback(AtomicEvent),
-
-    Placeholder,
+    Stop,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum AtomicEvent {
     Play,
     Pause,
-    Stop,
     SetVolume(f32),
     SetSpeed(f64),
 }
